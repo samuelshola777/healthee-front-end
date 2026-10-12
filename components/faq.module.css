@@ -1,0 +1,297 @@
+.section {
+    background: var(--cream);
+    color: var(--ink);
+    padding: clamp(56px, 7vw, 104px) 3.2%;
+    scroll-margin-top: 24px;
+}
+
+.inner {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.intro {
+    text-align: center;
+    margin: 0 auto clamp(28px, 4vw, 52px);
+}
+
+.eyebrow {
+    color: #b63e14;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    margin-bottom: 16px;
+}
+
+.intro h2 {
+    color: var(--green);
+    font-family: var(--display);
+    font-size: clamp(38px, 5.1vw, 72px);
+    line-height: 1.06;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+}
+
+.description {
+    font-size: clamp(14px, 1.4vw, 19px);
+    line-height: 1.6;
+    margin-top: 18px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 24px;
+}
+
+.card {
+    position: relative;
+    min-width: 0;
+    min-height: 320px;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid #6d9771;
+    border-radius: 26px;
+    background: #fbfaeb;
+    padding: 34px 36px 114px;
+}
+
+.card[open] {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--cream);
+}
+
+.summary {
+    position: static;
+    list-style: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary::marker {
+    content: "";
+}
+
+.summary:focus-visible {
+    outline: 3px solid var(--green);
+    outline-offset: 9px;
+    border-radius: 4px;
+}
+
+.card[open] .summary:focus-visible {
+    outline-color: var(--cream);
+}
+
+.category {
+    position: relative;
+    z-index: 2;
+    display: block;
+    color: #b63e14;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    margin-bottom: 20px;
+}
+
+.card[open] .category {
+    color: var(--cream);
+}
+
+.question {
+    position: relative;
+    z-index: 2;
+    display: block;
+    max-width: 88%;
+    color: var(--green);
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(29px, 3vw, 44px);
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+}
+
+.card[open] .question {
+    color: var(--cream);
+}
+
+.toggle {
+    position: absolute;
+    z-index: 2;
+    bottom: 24px;
+    right: 26px;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: #fff;
+}
+
+.toggle svg {
+    width: 28px;
+    height: 28px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.card[open] .vertical {
+    display: none;
+}
+
+.answer {
+    position: relative;
+    z-index: 2;
+    max-width: 83%;
+    margin-top: 20px;
+    font-size: clamp(14px, 1.3vw, 17px);
+    line-height: 1.65;
+}
+
+.explore {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    min-height: 44px;
+    border: 1px solid var(--cream);
+    border-radius: 99px;
+    background: var(--cream);
+    color: #07522c;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.explore:focus-visible {
+    outline-color: var(--cream);
+}
+
+.artwork {
+    position: absolute;
+    z-index: 1;
+    bottom: -64px;
+    right: -30px;
+    width: 200px;
+    height: 170px;
+    background-image: url("/assets/fresh-market/ingredients.png");
+    background-repeat: no-repeat;
+    background-size: 500% auto;
+    pointer-events: none;
+}
+
+.orange {
+    background-position: 0% center;
+    transform: rotate(-16deg);
+}
+
+.pineapple {
+    background-position: 50% center;
+    transform: rotate(-18deg);
+}
+
+.watermelon {
+    left: -42px;
+    right: auto;
+    background-position: 25% center;
+    transform: rotate(18deg);
+}
+
+.zobo {
+    background-position: 75% center;
+    transform: rotate(-12deg);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .card {
+        transition: box-shadow 180ms ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 12px 30px #103e1910;
+    }
+
+    .toggle {
+        transition: background-color 180ms ease;
+    }
+
+    .summary:hover .toggle {
+        background: #c84108;
+    }
+}
+
+@media (max-width: 900px) {
+    .grid {
+        gap: 18px;
+    }
+
+    .card {
+        padding: 28px 26px 114px;
+    }
+
+    .question {
+        max-width: 94%;
+    }
+
+    .answer {
+        max-width: 94%;
+    }
+
+    .toggle {
+        right: 24px;
+    }
+}
+
+@media (max-width: 700px) {
+    .section {
+        padding: 58px 18px 64px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .intro {
+        margin-bottom: 30px;
+    }
+
+    .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.16em;
+    }
+
+    .card {
+        min-height: 260px;
+        padding: 28px 25px 110px;
+        border-radius: 22px;
+    }
+
+    .question {
+        font-size: clamp(29px, 7.4vw, 38px);
+    }
+
+    .category {
+        font-size: 11px;
+        margin-bottom: 22px;
+    }
+
+    .answer {
+        font-size: 14px;
+        margin-top: 18px;
+    }
+
+    .artwork {
+        width: 170px;
+        height: 148px;
+        bottom: -50px;
+    }
+}
