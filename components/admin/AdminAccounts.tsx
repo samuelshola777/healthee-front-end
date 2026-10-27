@@ -1,0 +1,43 @@
+"use client";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import AdminDialog from "./AdminDialog";
+import { adminRequest, type Admin } from "./admin-api";
+import styles from "./live-admin.module.css";
+function AccountEditor({ account, onClose, onSaved }: { account?: Admin; onClose: () => void; onSaved: () => void }) {
+  const [firstName, setFirstName] = useState(account?.firstName ?? ""); const [lastName, setLastName] = useState(account?.lastName ?? ""); const [phone, setPhone] = useState(account?.phoneNumber ?? ""); const [email, setEmail] = useState(account?.emailAddress ?? ""); const [password, setPassword] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
+  const lock = useRef(false); const controller = useRef<AbortController | null>(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (lock.current) return;
+    lock.current = true; setBusy(true); setError(""); controller.current = new AbortController(); const signal = controller.current.signal;
+    try { await adminRequest(account ? `admin/${account.adminId}` : "admin", account ? "PUT" : "POST", { firstName: firstName.trim(), lastName: lastName.trim(), phoneNumber: phone.trim(), ...(!account ? { emailAddress: email.trim().toLowerCase(), password } : {}) }, signal); if (!signal.aborted) onSaved(); }
+    catch (failure) { if (!signal.aborted) setError(failure instanceof Error ? failure.message : "Could not save admin."); }
+    finally { lock.current = false; if (!signal.aborted) setBusy(false); }
+  }
+  return <AdminDialog title={account ? "Edit admin account" : "Create admin account"} busy={busy} onClose={onClose}><form className={styles.form} onSubmit={save}><fieldset disabled={busy}>
+    <div className={styles.two}><label>First name<input name="adminFirstName" required maxLength={100} value={firstName} onChange={event => setFirstName(event.target.value)} /></label><label>Last name<input name="adminLastName" required maxLength={100} value={lastName} onChange={event => setLastName(event.target.value)} /></label></div>
+    <label>Email address<input name="adminEmailAddress" type="email" required readOnly={!!account} maxLength={254} value={email} onChange={event => setEmail(event.target.value)} /></label>
+    <label>Phone number<input name="adminPhoneNumber" type="tel" maxLength={30} value={phone} onChange={event => setPhone(event.target.value)} /></label>
+    {!account && <label>Initial password<input name="adminInitialPassword" type="password" autoComplete="new-password" minLength={8} maxLength={100} required value={password} onChange={event => setPassword(event.target.value)} /><small>8–100 characters. New accounts receive normal admin access.</small></label>}
+    </fieldset>{error && <p className={styles.error} role="alert">{error}</p>}<div className={styles.formActions}><button className={styles.primary} disabled={busy}>{busy ? "Saving…" : "Save admin"}</button><button className={styles.secondary} type="button" disabled={busy} onClick={onClose}>Cancel</button></div></form></AdminDialog>;
+}
+export default function AdminAccounts({ current, onRefresh }: { current: Admin; onRefresh: () => void }) {
+  const [accounts, setAccounts] = useState<Admin[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [notice, setNotice] = useState(""); const [search, setSearch] = useState(""); const [reload, setReload] = useState(0); const [busy, setBusy] = useState(false);
+  const [editor, setEditor] = useState<{ account?: Admin; key: string } | null>(null); const [target, setTarget] = useState<{ account: Admin; operation: "activate" | "deactivate" | "delete" } | null>(null);
+  const lock = useRef(false); const controller = useRef<AbortController | null>(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => { const abort = new AbortController(); setLoading(true); setError(""); void adminRequest<Admin[]>("admin", "GET", undefined, abort.signal).then(value => { if (!Array.isArray(value)) throw new Error("Unexpected admin list response."); if (!abort.signal.aborted) setAccounts(value); }).catch(failure => { if (!abort.signal.aborted) setError(failure.message); }).finally(() => { if (!abort.signal.aborted) setLoading(false); }); return () => abort.abort(); }, [reload]);
+  async function action(task: (signal: AbortSignal) => Promise<void>) {
+    if (lock.current) return; lock.current = true; setBusy(true); setError(""); controller.current = new AbortController(); const signal = controller.current.signal;
+    try { await task(signal); } catch (failure) { if (!signal.aborted) setError(failure instanceof Error ? failure.message : "Could not update admin."); } finally { lock.current = false; if (!signal.aborted) setBusy(false); }
+  }
+  const rows = accounts.filter(account => `${account.firstName} ${account.lastName} ${account.emailAddress}`.toLowerCase().includes(search.trim().toLowerCase()));
+  return <section className={styles.panel}>
+    <div className={styles.heading}><div><span className={styles.eyebrow}>SUPER ADMIN</span><h1>Admin accounts</h1><p>Create and manage access to the HEALTHEE admin portal.</p></div><button className={styles.primary} disabled={busy} onClick={() => setEditor({ key: crypto.randomUUID() })}>Create admin +</button></div>
+    <label className={styles.accountSearch}>Search admins<input type="search" maxLength={100} value={search} onChange={event => setSearch(event.target.value)} placeholder="Name or email" /></label>
+    {notice && <p className={styles.success} role="status">{notice}</p>}{error && <p className={styles.error} role="alert">{error} <button onClick={() => setReload(value => value + 1)}>Retry</button></p>}
+    {loading ? <p className={styles.empty} role="status">Loading admin accounts…</p> : <div className={styles.tableScroll}><table className={styles.table}><caption className={styles.srOnly}>Admin accounts and their access status</caption><thead><tr><th>Name</th><th>Email</th><th>Access</th><th>Status</th><th>Actions</th></tr></thead><tbody>{rows.map(account => <tr key={account.adminId}><td>{account.firstName} {account.lastName}{account.adminId === current.adminId && <small> Your account</small>}</td><td>{account.emailAddress}</td><td>{account.superAdmin ? "Super admin" : "Admin"}</td><td>{account.active && account.userActive ? "Active" : "Inactive"}</td><td><div className={styles.cardActions}><button className={styles.secondary} disabled={busy} onClick={() => void action(async signal => { const value = await adminRequest<Admin>(`admin/${account.adminId}`, "GET", undefined, signal); if (!signal.aborted) setEditor({ account: value, key: crypto.randomUUID() }); })}>Edit</button><button className={styles.textButton} disabled={busy || account.superAdmin} onClick={() => setTarget({ account, operation: account.active ? "deactivate" : "activate" })}>{account.active ? "Deactivate" : "Activate"}</button><button className={styles.textButton} disabled={busy || account.superAdmin} onClick={() => setTarget({ account, operation: "delete" })}>Delete</button></div></td></tr>)}</tbody></table>{!rows.length && <p className={styles.empty}>No admin accounts match your search.</p>}</div>}
+    {editor && <AccountEditor key={editor.key} account={editor.account} onClose={() => setEditor(null)} onSaved={() => { setEditor(null); setNotice("Admin account saved."); setReload(value => value + 1); onRefresh(); }} />}
+    {target && <AdminDialog title={`${target.operation.charAt(0).toUpperCase() + target.operation.slice(1)} admin?`} busy={busy} onClose={() => setTarget(null)}><p>{target.operation === "delete" ? "Delete access for" : target.operation === "deactivate" ? "Deactivate access for" : "Restore access for"} <strong>{target.account.emailAddress}</strong>?</p><p className={styles.muted}>The bootstrap super admin is protected from deactivation and deletion.</p>{error && <p className={styles.error} role="alert">{error}</p>}<div className={styles.formActions}><button className={target.operation === "activate" ? styles.primary : styles.danger} disabled={busy} onClick={() => void action(async signal => { const path = `admin/${target.account.adminId}` + (target.operation === "delete" ? "" : `/${target.operation}`); await adminRequest(path, target.operation === "delete" ? "DELETE" : "PATCH", undefined, signal); if (!signal.aborted) { setTarget(null); setNotice("Admin access updated."); setReload(value => value + 1); } })}>Confirm {target.operation}</button><button className={styles.secondary} disabled={busy} onClick={() => setTarget(null)}>Cancel</button></div></AdminDialog>}
+  </section>;
+}
